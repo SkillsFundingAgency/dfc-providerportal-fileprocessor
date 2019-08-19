@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="12.1.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\copied\Dfc.CourseDirectory.Common\Dfc.CourseDirectory.Common.csproj" />
+    <ProjectReference Include="..\..\copied\Dfc.CourseDirectory.Models\Dfc.CourseDirectory.Models.csproj" />
+    <ProjectReference Include="..\..\copied\Dfc.CourseDirectory.Services\Dfc.CourseDirectory.Services.csproj" />
+    <ProjectReference Include="..\Dfc.ProviderPortal.FileProcessor.Common\Dfc.ProviderPortal.FileProcessor.Common.csproj" />
+  </ItemGroup>
+
+</Project>
