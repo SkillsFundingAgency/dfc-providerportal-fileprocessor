@@ -25,6 +25,60 @@
       "metadata": {
         "description": "Connection string for the storage account to store function app files"
       }
+    },
+    "apimKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The APIM subscription key for the APIM instance"
+      }
+    },
+    "findCoursesApiUrl": {
+      "type": "string",
+      "metadata": {
+        "description":  "Url to the FindACourse API on the APIM instance"
+      }
+    },
+    "venueServiceApiUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Url to the Venues API on APIM"
+      }
+    },
+    "courseApiUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Url to the courses API on APIM"
+      }
+    },
+    "azureSearchName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the azure search instance"
+      }
+    },
+    "azureSearchApiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The API key for querying the azure search instance"
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the storage account to watch for bulk upload files on"
+      }
+    },
+    "storageAccountResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the resource group containing the storage account for bulk upload files"
+      }
+    },
+    "findACourseApiPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The FAC password"
+      }
     }
   },
   "variables": {
@@ -92,6 +146,102 @@
               {
                 "name": "AzureWebJobsStorage",
                 "value": "[parameters('storageConnectionString')]"
+              },
+              {
+                "name": "IsEncrypted",
+                "value": "FALSE"
+              },
+              {
+                 "name": "Values__FUNCTIONS_WORKER_RUNTIME",
+                 "value": "dotnet"
+              },
+              {
+                "name": "Values__AzureWebJobsStorage",
+                "value": "[parameters('storageConnectionString')]"
+              },
+              {
+                "name": "Values__containerName",
+                "value": "provider-files"
+              },
+              {
+                "name": "BlobStorageSettings__AccountName",
+                "value": "[parameters('storageAccountName')]"
+              },
+              {
+                "name": "BlobStorageSettings__AccountKey",
+                "value": "[listKeys(resourceId(parameters('storageAccountResourceGroup'), 'Microsoft.Storage/storageAccounts', parameters('storageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
+              },
+              {
+                "name": "BlobStorageSettings__Container",
+                "value": "provider-files"
+              },
+              {
+                "name": "BlobStorageSettings__TemplatePath",
+                "value": "bulkuploadtemplate.csv"
+              },
+              {
+                "name": "BlobStorageSettings__InlineProcessingThreshold",
+                "value": "200"
+              },
+              {
+                "name": "VenueServiceSettings__ApiUrl",
+                "value": "[parameters('venueServiceApiUrl')]"
+              },
+              {
+                "name": "VenueServiceSettings__ApiKey",
+                "value": "[parameters('apimKey')]"
+              },
+              {
+                "name": "VenueServiceSettings__ApiVersion",
+                "value": ""
+              },
+              {
+                "name": "LarsSearchSettings__ApiUrl",
+                "value": "[concat('https://', parameters('azureSearchName'), '.search.windows.net/indexes/lars/docs/search')]"
+              },
+              {
+                "name": "LarsSearchSettings__ApiKey",
+                "value": "[parameters('azureSearchApiKey')]"
+              },
+              {
+                "name": "LarsSearchSettings__ApiVersion",
+                "value": "11/11/2017"
+              },
+              {
+                "name": "LarsSearchSettings__Indexes",
+                "value": "azuresql-index"
+              },
+              {
+                "name": "LarsSearchSettings__ItemsPerPage",
+                "value": "10"
+              },
+              {
+                "name": "LarsSearchSettings__PageParamName",
+                "value": "PageNo"
+              },
+              {
+                "name": "FindACourseServiceSettings__ApiUrl",
+                "value": "[parameters('findCoursesApiUrl')]"
+              },
+              {
+                "name": "FindACourseServiceSettings__ApiKey",
+                "value": "[parameters('apimKey')]"
+              },
+              {
+                "name": "FindACourseServiceSettings__UserName",
+                "value": "APIUser"
+              },
+              {
+                "name": "FindACourseServiceSettings__Password",
+                "value": "[parameters('findACourseApiPassword')]"
+              },
+              {
+                "name": "CourseServiceSettings__ApiUrl",
+                "value": "[parameters('courseApiUrl')]"
+              },
+              {
+                "name": "CourseServiceSettings__ApiKey",
+                "value": "[parameters('apimKey')]"
               }
             ]
           },

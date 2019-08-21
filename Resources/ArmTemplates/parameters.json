@@ -13,6 +13,33 @@
       },
       "storageConnectionString": {
         "value": "__providerPortalStorageConnectionStr__"
+      },
+      "apimKey": {
+        "value": "__apimKey__"
+      },
+      "findCoursesApiUrl": {
+        "value": "__apimCoursesUrl__"
+      },
+      "venueServiceApiUrl": {
+        "value": "__venueServiceApiUrl__"
+      },
+      "courseApiUrl": {
+        "value": "__courseApiUrl__"
+      },
+      "azureSearchName": {
+        "value": "__providerPortalAzureSearch__"
+      },
+      "azureSearchApiKey": {
+        "value": "__azureSearchQueryKey__"
+      },
+      "storageAccountName": {
+        "value": "__providerPortalStorgeAccName__"
+      },
+      "storageAccountResourceGroup": {
+        "value": "__providerPortalResourceGroup__"
+      },
+      "findACourseApiPassword": {
+        "value": "__FindACourse_Passsword__"
       }
     }
   }
