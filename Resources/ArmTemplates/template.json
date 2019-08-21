@@ -35,7 +35,7 @@
   "resources": [
     {
       "apiVersion": "2017-05-10",
-      "name": "ppcflAppInsights",
+      "name": "ppfpAppInsights",
       "type": "Microsoft.Resources/deployments",
       "properties": {
         "mode": "Incremental",
@@ -55,10 +55,10 @@
     },
     {
       "apiVersion": "2017-05-10",
-      "name": "ppcflAppService",
+      "name": "ppfpAppService",
       "type": "Microsoft.Resources/deployments",
       "dependsOn": [
-        "ppcflAppInsights"
+        "ppfpAppInsights"
       ],
       "properties": {
         "mode": "Incremental",
@@ -83,7 +83,7 @@
             "value": [
               {
                 "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                "value": "[reference('ppcflAppInsights').outputs.InstrumentationKey.value]"
+                "value": "[reference('ppfpAppInsights').outputs.InstrumentationKey.value]"
               },
               {
                 "name": "FUNCTIONS_EXTENSION_VERSION",
@@ -113,7 +113,7 @@
     },
     "appInsightInstrumentationKey": {
       "type": "string",
-      "value": "[reference('ppcflAppInsights').outputs.InstrumentationKey.value]"
+      "value": "[reference('ppfpAppInsights').outputs.InstrumentationKey.value]"
     }
   } 
 }
