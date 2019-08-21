@@ -39,7 +39,7 @@
         "value": "__providerPortalResourceGroup__"
       },
       "findACourseApiPassword": {
-        "value": "__FindACourse_Passsword__"
+        "value": "__FindACoursePassword__"
       }
     }
   }
