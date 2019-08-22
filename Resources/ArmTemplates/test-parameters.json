@@ -13,6 +13,33 @@
     },
     "storageConnectionString": {
       "value": "DefaultEndpointsProtocol=https;AccountName=dfcfooprovstr;AccountKey=this_is_not_a_real_account==;EndpointSuffix=core.windows.net"
+    },
+    "apimKey": {
+      "value": "not-a-real-key"
+    },
+    "findCoursesApiUrl": {
+      "value": "https://apim.instance/api/findacourse/"
+    },
+    "venueServiceApiUrl": {
+      "value": "https://apim.instance/api/venues/"
+    },
+    "courseApiUrl": {
+      "value": "https://apim.instance/api/courses/"
+    },
+    "azureSearchName": {
+      "value": "AnAzureSearchInstance"
+    },
+    "azureSearchApiKey": {
+      "value": "not-a-search-api-key"
+    },
+    "storageAccountName": {
+      "value": "AStorageAccount"
+    },
+    "storageAccountResourceGroup": {
+      "value": "SomeSharedResourceGroup"
+    },
+    "findACourseApiPassword": {
+      "value": "not-a-real-password"
     }
   }
 }
