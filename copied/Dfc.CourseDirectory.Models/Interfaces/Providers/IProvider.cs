@@ -30,5 +30,7 @@ namespace Dfc.CourseDirectory.Models.Interfaces.Providers
         string MarketingInformation { get; set; }
 
         string Alias{ get; set; }
+
+        BulkUploadStatus BulkUploadStatus { get; set; }
     }
 }

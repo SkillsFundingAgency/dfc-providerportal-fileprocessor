@@ -13,7 +13,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
         Task ProcessFileAsync(ILogger log, CloudStorageAccount cloudStorageAccount, string containerName, string fileName, Stream fileStream);
 
         // Independently-callable workers
-        List<BulkUploadCourse> ParseCsvFile(ILogger log, string fileName, Stream stream, out List<string> errors);
+        List<BulkUploadCourse> ParseCsvFile(ILogger log, string fileName, Stream stream, int ukPRN, out List<string> errors);
         Task CreateErrorFileAsync(ILogger log, string fileName, Stream stream, CloudStorageAccount cloudStorageAccount, string containerName, string error);
     }
 }

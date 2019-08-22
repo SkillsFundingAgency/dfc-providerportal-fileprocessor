@@ -2,7 +2,9 @@
 using Dfc.CourseDirectory.Services.CourseService;
 using Dfc.CourseDirectory.Services.Interfaces;
 using Dfc.CourseDirectory.Services.Interfaces.CourseService;
+using Dfc.CourseDirectory.Services.Interfaces.ProviderService;
 using Dfc.CourseDirectory.Services.Interfaces.VenueService;
+using Dfc.CourseDirectory.Services.ProviderService;
 using Dfc.CourseDirectory.Services.VenueService;
 using Dfc.ProviderPortal.FileProcessor.Provider;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
@@ -34,6 +36,9 @@ namespace Dfc.ProviderPortal.FileProcessor.Functions
             builder.Services.Configure<CourseServiceSettings>(configuration.GetSection(nameof(CourseServiceSettings)));
             builder.Services.Configure<FindACourseServiceSettings>(configuration.GetSection(nameof(FindACourseServiceSettings)));
             builder.Services.AddScoped<ICourseService, CourseService>();
+
+            builder.Services.Configure<ProviderServiceSettings>(configuration.GetSection(nameof(ProviderServiceSettings)));
+            builder.Services.AddScoped<IProviderService, ProviderService>();
 
             builder.Services.AddScoped<IProviderFileImporter, ProviderCsvFileImporter>();
         }
