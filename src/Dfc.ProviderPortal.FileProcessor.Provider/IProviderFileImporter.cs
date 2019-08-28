@@ -17,7 +17,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
         List<BulkUploadCourse> ParseCsvFile(ILogger log, string fileName, Stream stream, int ukPRN, out List<string> errors);
         Task CreateErrorFileAsync(ILogger log, string fileName, Stream stream, CloudStorageAccount cloudStorageAccount, string containerName, string error);
 
-        Task SetBulkUploadStatus(ILogger log, IProvider provider, int rowCount = 0);
-        Task ClearBulkUploadStatus(ILogger log, IProvider provider);
+        Task<bool> SetBulkUploadStatus(ILogger log, IProvider provider, int rowCount = 0);
+        Task<bool> ClearBulkUploadStatus(ILogger log, IProvider provider);
     }
 }
