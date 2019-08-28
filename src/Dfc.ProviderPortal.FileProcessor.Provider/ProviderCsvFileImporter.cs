@@ -990,12 +990,12 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             return venues;
         }
 
-        private async Task ClearBulkUploadStatus(ILogger log, IProvider provider)
+        public async Task ClearBulkUploadStatus(ILogger log, IProvider provider)
         {
             await SetBulkUploadStatus(log, provider, 0);
         }
 
-        private async Task SetBulkUploadStatus(ILogger log, IProvider provider, int rowCount = 0)
+        public async Task SetBulkUploadStatus(ILogger log, IProvider provider, int rowCount = 0)
         {
             BulkUploadStatus bustatus = new BulkUploadStatus()
             {
