@@ -990,12 +990,12 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             return venues;
         }
 
-        public async Task ClearBulkUploadStatus(ILogger log, IProvider provider)
+        public async Task<bool> ClearBulkUploadStatus(ILogger log, IProvider provider)
         {
-            await SetBulkUploadStatus(log, provider, 0);
+            return await SetBulkUploadStatus(log, provider, 0);
         }
 
-        public async Task SetBulkUploadStatus(ILogger log, IProvider provider, int rowCount = 0)
+        public async Task<bool> SetBulkUploadStatus(ILogger log, IProvider provider, int rowCount = 0)
         {
             BulkUploadStatus bustatus = new BulkUploadStatus()
             {
@@ -1009,7 +1009,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             if(result.IsFailure)
             {
                 log.LogError($"Failed to update bulk upload status on provider {provider.ProviderName}");
+                return false;
             }
+
+            return true;
         }
 
     }
