@@ -13,7 +13,9 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider.Test.Integration
 {
     public class ProviderFileImporterIntegrationTests
     {
+#if DEBUG   // hide integration test from release build (ie. Azure)
         [Fact]
+#endif
         public void SetBulkUploadStatus_Should_Succeed()
         {
             // Arrange
@@ -40,7 +42,9 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider.Test.Integration
             afterProvider.BulkUploadStatus.InProgress.Should().BeTrue();
         }
 
+#if DEBUG   // hide integration test from release build (ie. Azure)
         [Fact]
+#endif
         public void ClearBulkUploadStatus_Should_Succeed()
         {
             // Arrange
