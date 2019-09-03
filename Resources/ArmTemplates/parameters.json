@@ -40,6 +40,9 @@
       },
       "findACourseApiPassword": {
         "value": "__FindACoursePassword__"
+      },
+      "providerApiUrl": {
+        "value": "__providerApiUrl__"
       }
     }
   }
