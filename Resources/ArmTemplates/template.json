@@ -258,7 +258,7 @@
                 "value": "[parameters('apimKey')]"
               },
               {
-                "name": "ontainerName",
+                "name": "containerName",
                 "value": "provider-files"
               }
             ]
