@@ -24,6 +24,7 @@ using Dfc.CourseDirectory.Services.VenueService;
 using Dfc.ProviderPortal.FileProcessor.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
+using static Dfc.CourseDirectory.Models.Helpers.Attributes.AlternativeName;
 
 namespace Dfc.ProviderPortal.FileProcessor.Provider
 {
@@ -146,7 +147,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
         }
 
 
-        private async Task<IResult> DeleteCoursesForProvider(ILogger log, int ukPRN)
+        public async Task<IResult> DeleteCoursesForProvider(ILogger log, int ukPRN)
         {
             log.LogDebug($"Deleting bulk upload courses for Provider {ukPRN}");
             return await _courseService.DeleteBulkUploadCourses(ukPRN);
@@ -889,9 +890,17 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             {
                 var attribute = Attribute.GetCustomAttribute(field,
                     typeof(DescriptionAttribute)) as DescriptionAttribute;
+
+                var alternativeName = Attribute.GetCustomAttribute(field, typeof(AlternativeNameAttribute)) as AlternativeNameAttribute;
+
                 if (attribute != null)
                 {
                     if (attribute.Description.Equals(description, StringComparison.InvariantCultureIgnoreCase))
+                        return (T)field.GetValue(null);
+                }
+                if (alternativeName != null)
+                {
+                    if (alternativeName.Value.Equals(description, StringComparison.InvariantCultureIgnoreCase))
                         return (T)field.GetValue(null);
                 }
                 else
@@ -985,6 +994,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                         venues = enumerable.ToList();
                     }
                 }
+            }
+            else
+            {
+                throw new Exception($"Cannot process file. {result.Error}");
             }
 
             return venues;
