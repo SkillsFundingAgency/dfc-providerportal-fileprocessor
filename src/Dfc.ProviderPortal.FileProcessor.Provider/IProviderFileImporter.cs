@@ -5,6 +5,7 @@ using Microsoft.WindowsAzure.Storage;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Dfc.CourseDirectory.Common.Interfaces;
 
 namespace Dfc.ProviderPortal.FileProcessor.Provider
 {
@@ -19,5 +20,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
         Task<bool> SetBulkUploadStatus(ILogger log, IProvider provider, int rowCount = 0);
         Task<bool> ClearBulkUploadStatus(ILogger log, IProvider provider);
+        Task<IResult> DeleteCoursesForProvider(ILogger log, int ukPRN);
     }
 }

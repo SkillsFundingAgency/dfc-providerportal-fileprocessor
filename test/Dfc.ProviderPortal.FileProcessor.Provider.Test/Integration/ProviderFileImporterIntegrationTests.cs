@@ -70,5 +70,28 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider.Test.Integration
             afterProvider.BulkUploadStatus.Should().NotBeNull();
             afterProvider.BulkUploadStatus.InProgress.Should().BeFalse();
         }
+
+        [Fact]
+        public void DeleteCoursesForProviderTest()
+        {
+            // Arrange
+
+            int ukPRN = 10003954;
+
+            ILarsSearchService larsSearchService = LarsSearchServiceTestFactory.GetService();
+            ICourseService courseService = CourseServiceTestFactory.GetService();
+            IVenueService venueService = VenueServiceTestFactory.GetService();
+            IProviderService providerService = ProviderServiceTestFactory.GetService();
+            IProviderFileImporter importer = new ProviderCsvFileImporter(larsSearchService, courseService, venueService, providerService);
+            var beforeProvider = providerService.GetProviderByPRNAsync(new ProviderSearchCriteria(ukPRN.ToString())).Result.Value.Value.First();
+            var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+
+            // Act
+
+            var result = Task.Run(async () => await importer.DeleteCoursesForProvider(logger, ukPRN)).Result;
+
+            // Assert
+
+        }
     }
 }

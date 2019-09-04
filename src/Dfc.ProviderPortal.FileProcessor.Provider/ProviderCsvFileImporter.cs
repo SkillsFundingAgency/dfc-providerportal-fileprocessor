@@ -147,7 +147,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
         }
 
 
-        private async Task<IResult> DeleteCoursesForProvider(ILogger log, int ukPRN)
+        public async Task<IResult> DeleteCoursesForProvider(ILogger log, int ukPRN)
         {
             log.LogDebug($"Deleting bulk upload courses for Provider {ukPRN}");
             return await _courseService.DeleteBulkUploadCourses(ukPRN);
@@ -994,6 +994,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                         venues = enumerable.ToList();
                     }
                 }
+            }
+            else
+            {
+                throw new Exception($"Cannot process file. {result.Error}");
             }
 
             return venues;

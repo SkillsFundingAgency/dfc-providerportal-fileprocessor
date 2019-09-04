@@ -102,6 +102,14 @@ namespace Dfc.CourseDirectory.Services.CourseService
             _howAssessedTextFieldMaxChars = howAssessedComponentSettings.Value.TextFieldMaxChars;
             _whereNextTextFieldMaxChars = whereNextComponentSettings.Value.TextFieldMaxChars;
 
+            if (_courseForTextFieldMaxChars == 0) _courseForTextFieldMaxChars = 2000;
+            if (_entryRequirementsTextFieldMaxChars == 0) _entryRequirementsTextFieldMaxChars = 500;
+            if (_whatWillLearnTextFieldMaxChars == 0) _whatWillLearnTextFieldMaxChars = 1000;
+            if (_howYouWillLearnTextFieldMaxChars == 0) _howYouWillLearnTextFieldMaxChars = 500;
+            if (_whatYouNeedTextFieldMaxChars == 0) _whatYouNeedTextFieldMaxChars = 500;
+            if (_howAssessedTextFieldMaxChars == 0) _howAssessedTextFieldMaxChars = 500;
+            if (_whereNextTextFieldMaxChars == 0) _whereNextTextFieldMaxChars = 500;
+
             _apiUserName = facSettings.Value.UserName;
             _apiPassword = facSettings.Value.Password;
         }
