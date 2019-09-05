@@ -1,4 +1,5 @@
-﻿using Dfc.CourseDirectory.Services.Interfaces;
+﻿using Dfc.CourseDirectory.Models.Enums;
+using Dfc.CourseDirectory.Services.Interfaces;
 using Dfc.CourseDirectory.Services.Interfaces.CourseService;
 using Dfc.CourseDirectory.Services.Interfaces.ProviderService;
 using Dfc.CourseDirectory.Services.Interfaces.VenueService;
@@ -70,7 +71,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider.Test.Integration
         }
 
         //[Fact]
-        public void DeleteCoursesForProviderTest()
+        public void DeleteBulkUploadCoursesForProviderTest()
         {
             // Arrange
 
@@ -86,10 +87,35 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider.Test.Integration
 
             // Act
 
-            var result = Task.Run(async () => await importer.DeleteCoursesForProvider(logger, ukPRN)).Result;
+            var result = Task.Run(async () => await importer.DeleteBulkUploadCoursesForProvider(logger, ukPRN)).Result;
 
             // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+        }
 
+        //[Fact]
+        public void ArchiveCoursesForProviderTest()
+        {
+            // Arrange
+
+            int ukPRN = 10003954;
+
+            ILarsSearchService larsSearchService = LarsSearchServiceTestFactory.GetService();
+            ICourseService courseService = CourseServiceTestFactory.GetService();
+            IVenueService venueService = VenueServiceTestFactory.GetService();
+            IProviderService providerService = ProviderServiceTestFactory.GetService();
+            IProviderFileImporter importer = new ProviderCsvFileImporter(larsSearchService, courseService, venueService, providerService);
+            var beforeProvider = providerService.GetProviderByPRNAsync(new ProviderSearchCriteria(ukPRN.ToString())).Result.Value.Value.First();
+            var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+
+            // Act
+
+            var result = Task.Run(async () => await courseService.ChangeCourseRunStatusesForUKPRNSelection(ukPRN, (int)RecordStatus.Live, (int)RecordStatus.Archived)).Result;
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
         }
     }
 }
