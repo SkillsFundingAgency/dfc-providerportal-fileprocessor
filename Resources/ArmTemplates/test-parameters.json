@@ -40,6 +40,9 @@
     },
     "findACourseApiPassword": {
       "value": "not-a-real-password"
+    },
+    "providerApiUrl": {
+      "value": "https://apim.instance/api/provider"
     }
   }
 }

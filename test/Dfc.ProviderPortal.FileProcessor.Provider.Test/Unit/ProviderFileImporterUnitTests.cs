@@ -1,5 +1,6 @@
 ﻿using Dfc.CourseDirectory.Services.Interfaces;
 using Dfc.CourseDirectory.Services.Interfaces.CourseService;
+using Dfc.CourseDirectory.Services.Interfaces.ProviderService;
 using Dfc.CourseDirectory.Services.Interfaces.VenueService;
 using Dfc.ProviderPortal.FileProcessor.Provider.Test.Unit.Helpers;
 using Dfc.ProviderPortal.FileProcessor.Provider.Test.Unit.Mocks;
@@ -23,14 +24,16 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider.Test.Unit
                 ILarsSearchService larsSearchService = LarsSearchServiceMockFactory.GetLarsSearchService();
                 ICourseService courseService = CourseServiceMockFactory.GetCourseService();
                 IVenueService venueService = VenueServiceMockFactory.GetVenueService();
-                IProviderFileImporter importer = new ProviderCsvFileImporter(larsSearchService, courseService, venueService);
+                IProviderService providerService = ProviderServiceMockFactory.GetProviderService();
+                IProviderFileImporter importer = new ProviderCsvFileImporter(larsSearchService, courseService, venueService, providerService);
                 Stream fileStream = CsvStreams.BulkUpload_ValidMultiple();
                 ILogger log = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+                int ukPRN = 0;
 
                 // Act
 
                 List<string> errors;
-                var courses = importer.ParseCsvFile(log, @"10000020\Bulk Upload\Files\190627-082122 Provider Name Ltd.csv", fileStream, out errors);
+                var courses = importer.ParseCsvFile(log, @"10000020\Bulk Upload\Files\190627-082122 Provider Name Ltd.csv", fileStream, ukPRN, out errors);
                 fileStream.Close();
 
                 // Assert
