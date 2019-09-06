@@ -9,17 +9,22 @@ using CsvHelper;
 using Dfc.CourseDirectory.Common;
 using Dfc.CourseDirectory.Common.Interfaces;
 using Dfc.CourseDirectory.Models.Enums;
+using Dfc.CourseDirectory.Models.Interfaces.Providers;
 using Dfc.CourseDirectory.Models.Models.Courses;
+using Dfc.CourseDirectory.Models.Models.Providers;
 using Dfc.CourseDirectory.Models.Models.Regions;
 using Dfc.CourseDirectory.Models.Models.Venues;
 using Dfc.CourseDirectory.Services;
 using Dfc.CourseDirectory.Services.Interfaces;
 using Dfc.CourseDirectory.Services.Interfaces.CourseService;
+using Dfc.CourseDirectory.Services.Interfaces.ProviderService;
 using Dfc.CourseDirectory.Services.Interfaces.VenueService;
+using Dfc.CourseDirectory.Services.ProviderService;
 using Dfc.CourseDirectory.Services.VenueService;
 using Dfc.ProviderPortal.FileProcessor.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
+using static Dfc.CourseDirectory.Models.Helpers.Attributes.AlternativeName;
 
 namespace Dfc.ProviderPortal.FileProcessor.Provider
 {
@@ -28,13 +33,15 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
         private readonly ILarsSearchService _larsSearchService;
         private readonly ICourseService _courseService;
         private readonly IVenueService _venueService;
+        private readonly IProviderService _providerService;
         private List<Venue> cachedVenues;
 
-        public ProviderCsvFileImporter(ILarsSearchService larsSearchService, ICourseService courseService, IVenueService venueService)
+        public ProviderCsvFileImporter(ILarsSearchService larsSearchService, ICourseService courseService, IVenueService venueService, IProviderService providerService)
         {
             _larsSearchService = larsSearchService;
             _courseService = courseService;
             _venueService = venueService;
+            _providerService = providerService;
         }
 
         // the UoW
@@ -48,9 +55,24 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 return;
             }
 
-            // 2. Parse the courses from the file.
+            // 2. Parse the UK PRN from the filename
+            int ukPRN = GetUKPRNFromFilename(fileName);
+            if (0 == ukPRN)
+            {
+                log.LogError($"Failed to parse the Provider's UK PRN from the filename {fileName}. Cannot proceed.");
+                return;
+            }
+            IProvider provider = FindProvider(ukPRN);
+            if (null == provider)
+            {
+                log.LogError($"Failed to find provider with PRN {ukPRN}. Cannot proceed.");
+                return;
+            }
+
+
+            // 3. Parse the courses from the file.
             List<string> errors;
-            var bulkUploadCourses = ParseCsvFile(log, fileName, fileStream, out errors);
+            var bulkUploadCourses = ParseCsvFile(log, fileName, fileStream, ukPRN, out errors);
             if(null != errors && errors.Any())
             {
                 // @ToDo: Tell someone.
@@ -66,9 +88,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 return;
             }
 
-            int providerUKPRN = GetUKPRNFromFilename(fileName);
+            // 4. Set the bulk upload status on the provider to "in progress"
+            await SetBulkUploadStatus(log, provider, bulkUploadCourses.Count);
 
-            // 3. Populate the courses with LARS data.
+            // 5. Populate the courses with LARS data.
             bulkUploadCourses = PopulateLARSData(bulkUploadCourses, out errors);
             if (null != errors && errors.Any())
             {
@@ -77,9 +100,9 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 await CreateErrorFileAsync(log, fileName, fileStream, cloudStorageAccount, containerName, errors);
             }
 
-            // 4. Map bulkupload course objects to course objects
+            // 6. Map bulkupload course objects to course objects
             string userId = "ProviderCsvFileImporter";
-            var courses = MappingBulkUploadCourseToCourse(log, bulkUploadCourses, userId, providerUKPRN, out errors);
+            var courses = MappingBulkUploadCourseToCourse(log, bulkUploadCourses, userId, ukPRN, out errors);
             if (null != errors && errors.Any())
             {
                 // @ToDo: Tell someone. But keep going as the errors are attached to the course objects so we'll upload them.
@@ -87,25 +110,44 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 await CreateErrorFileAsync(log, fileName, fileStream, cloudStorageAccount, containerName, errors);
             }
 
-            // 5. Delete existing courses for the provier.
-            var result = await DeleteCoursesForProvider(log, providerUKPRN);
+            // 7. Delete existing courses for the provier.
+            var result = await DeleteCoursesForProvider(log, ukPRN);
             if(result.IsFailure)
             {
-                log.LogError($"Failed to delete bulk upload courses for provider {providerUKPRN}.");
-                errors.Add($"Failed to delete the existing bulk-uploaded courses. Cannot proceed to upload new courses.");
-                return;
+                log.LogError($"Failed to delete bulk upload courses for provider {ukPRN}.");
+                errors.Add($"Failed to delete the existing bulk-uploaded courses.");
             }
 
-            // 6. Import the new courses.
+            // 8. Import the new courses.
             await UploadCourses(log, courses);
 
-            // 7. Mark as completed.
+            // 9. Mark as completed.
             await MarkAsProcessedAsync(log, fileName, fileStream, cloudStorageAccount, containerName);
+            await ClearBulkUploadStatus(log, provider);
   
             log.LogInformation($"Successfully processed file [{fileName}]");
         }
 
-        private async Task<IResult> DeleteCoursesForProvider(ILogger log, int ukPRN)
+        private IProvider FindProvider(int ukPRN)
+        {
+            IProvider provider = null;
+            try
+            {
+                var providerSearchResult = Task.Run(async () => await _providerService.GetProviderByPRNAsync(new ProviderSearchCriteria(ukPRN.ToString()))).Result;
+                if (providerSearchResult.IsSuccess)
+                {
+                    provider = providerSearchResult.Value.Value.FirstOrDefault();
+                }
+            }
+            catch (Exception)
+            {
+                // @ToDo: decide how to handle this
+            }
+            return provider;
+        }
+
+
+        public async Task<IResult> DeleteCoursesForProvider(ILogger log, int ukPRN)
         {
             log.LogDebug($"Deleting bulk upload courses for Provider {ukPRN}");
             return await _courseService.DeleteBulkUploadCourses(ukPRN);
@@ -209,7 +251,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             return prn;
         }
 
-        public List<BulkUploadCourse> ParseCsvFile(ILogger log, string fileName, Stream stream, out List<string> errors)
+        public List<BulkUploadCourse> ParseCsvFile(ILogger log, string fileName, Stream stream, int ukPRN, out List<string> errors)
         {
             // Lifted and shifted from BulkUploadService.
             var validationErrors = new List<string>();
@@ -225,15 +267,8 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             {
 
 
-                int providerUKPRN = GetUKPRNFromFilename(fileName);
-                if (0 == providerUKPRN)
-                {
-                    log.LogError($"Failed to parse the Provider's UK PRN from the filename {fileName}. Cannot proceed.");
-                    errors = validationErrors;
-                    return null;
-                }
 
-                cachedVenues = GetVenuesForProvider(providerUKPRN);
+                cachedVenues = GetVenuesForProvider(ukPRN);
 
                 using (var reader = new StreamReader(stream))
                 {
@@ -398,7 +433,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                                         TempCourseId = tempCourseId,
                                         BulkUploadLineNumber = bulkUploadLineNumber,
                                         LearnAimRef = currentLearnAimRef,
-                                        ProviderUKPRN = providerUKPRN,
+                                        ProviderUKPRN = ukPRN,
                                         VenueName = csv.GetField("VENUE").Trim(),
                                         CourseName = csv.GetField("COURSE_NAME").Trim(),
                                         ProviderCourseID = csv.GetField("ID").Trim(),
@@ -855,9 +890,17 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             {
                 var attribute = Attribute.GetCustomAttribute(field,
                     typeof(DescriptionAttribute)) as DescriptionAttribute;
+
+                var alternativeName = Attribute.GetCustomAttribute(field, typeof(AlternativeNameAttribute)) as AlternativeNameAttribute;
+
                 if (attribute != null)
                 {
                     if (attribute.Description.Equals(description, StringComparison.InvariantCultureIgnoreCase))
+                        return (T)field.GetValue(null);
+                }
+                if (alternativeName != null)
+                {
+                    if (alternativeName.Value.Equals(description, StringComparison.InvariantCultureIgnoreCase))
                         return (T)field.GetValue(null);
                 }
                 else
@@ -952,8 +995,37 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                     }
                 }
             }
+            else
+            {
+                throw new Exception($"Cannot process file. {result.Error}");
+            }
 
             return venues;
+        }
+
+        public async Task<bool> ClearBulkUploadStatus(ILogger log, IProvider provider)
+        {
+            return await SetBulkUploadStatus(log, provider, 0);
+        }
+
+        public async Task<bool> SetBulkUploadStatus(ILogger log, IProvider provider, int rowCount = 0)
+        {
+            BulkUploadStatus bustatus = new BulkUploadStatus()
+            {
+                InProgress = (rowCount > 0),
+                StartedTimestamp = (rowCount > 0) ? DateTime.Now : default(DateTime?),
+                TotalRowCount = rowCount            
+            };
+            provider.BulkUploadStatus = bustatus;
+
+            var result = await _providerService.UpdateProviderDetails(provider);
+            if(result.IsFailure)
+            {
+                log.LogError($"Failed to update bulk upload status on provider {provider.ProviderName}");
+                return false;
+            }
+
+            return true;
         }
 
     }

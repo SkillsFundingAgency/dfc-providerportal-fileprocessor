@@ -46,6 +46,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Common
             foreach(string line in lines)
             {
                 await appendBlob.AppendTextAsync(line);
+                await appendBlob.AppendTextAsync(System.Environment.NewLine);
             }
         }
     }

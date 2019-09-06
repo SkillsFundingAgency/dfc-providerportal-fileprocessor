@@ -5,7 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Interfaces\" />
     <Folder Include="Models\Courses\" />
     <Folder Include="Models\Venues\" />
     <Folder Include="Enums\" />

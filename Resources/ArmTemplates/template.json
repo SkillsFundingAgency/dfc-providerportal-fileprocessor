@@ -79,6 +79,12 @@
       "metadata": {
         "description": "The FAC password"
       }
+    },
+    "providerApiUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Url to the provider API on APIM"
+      }
     }
   },
   "variables": {
@@ -242,6 +248,18 @@
               {
                 "name": "CourseServiceSettings__ApiKey",
                 "value": "[parameters('apimKey')]"
+              },
+              {
+                "name": "ProviderServiceSettings__ApiUrl",
+                "value": "[parameters('providerApiUrl')]"
+              },
+              {
+                "name": "ProviderServiceSettings__ApiKey",
+                "value": "[parameters('apimKey')]"
+              },
+              {
+                "name": "containerName",
+                "value": "provider-files"
               }
             ]
           },
