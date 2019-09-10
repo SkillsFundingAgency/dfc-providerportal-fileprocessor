@@ -98,6 +98,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 // @ToDo: Tell someone.
                 log.LogError($"File [{fileName}] failed updated with LARS data.");
                 await CreateErrorFileAsync(log, fileName, fileStream, cloudStorageAccount, containerName, errors);
+                await ClearBulkUploadStatus(log, provider);
                 return;   // Per the web app inline code - if we have invalid LARS we stop processing
             }
 
@@ -111,7 +112,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 await CreateErrorFileAsync(log, fileName, fileStream, cloudStorageAccount, containerName, errors);
             }
 
-            // 7. Delete existing courses for the provier.
+            // 7. Delete existing courses for the provider.
             var result = await DeleteBulkUploadCourses(log, ukPRN);
             if(result.IsFailure)
             {
