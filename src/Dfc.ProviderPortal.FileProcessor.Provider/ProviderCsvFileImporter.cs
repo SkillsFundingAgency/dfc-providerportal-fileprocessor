@@ -1028,7 +1028,8 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             {
                 InProgress = (rowCount > 0),
                 StartedTimestamp = (rowCount > 0) ? DateTime.Now : default(DateTime?),
-                TotalRowCount = rowCount            
+                TotalRowCount = rowCount,
+                PublishInProgress = false,
             };
             provider.BulkUploadStatus = bustatus;
 
