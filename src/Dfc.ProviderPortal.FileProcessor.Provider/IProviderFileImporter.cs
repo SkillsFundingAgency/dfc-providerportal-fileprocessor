@@ -20,6 +20,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
         Task<bool> SetBulkUploadStatus(ILogger log, IProvider provider, int rowCount = 0);
         Task<bool> ClearBulkUploadStatus(ILogger log, IProvider provider);
-        Task<IResult> DeleteCoursesForProvider(ILogger log, int ukPRN);
+        Task<IResult> DeleteBulkUploadCourses(ILogger log, int ukPRN);
+        Task<IResult> ArchiveCourses(ILogger log, int ukPRN);
     }
 }

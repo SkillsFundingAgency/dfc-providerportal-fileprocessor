@@ -92,12 +92,14 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             await SetBulkUploadStatus(log, provider, bulkUploadCourses.Count);
 
             // 5. Populate the courses with LARS data.
-            bulkUploadCourses = PopulateLARSData(bulkUploadCourses, out errors);
+            bulkUploadCourses = PopulateLARSData(log, bulkUploadCourses, out errors);
             if (null != errors && errors.Any())
             {
                 // @ToDo: Tell someone.
                 log.LogError($"File [{fileName}] failed updated with LARS data.");
                 await CreateErrorFileAsync(log, fileName, fileStream, cloudStorageAccount, containerName, errors);
+                await ClearBulkUploadStatus(log, provider);
+                return;   // Per the web app inline code - if we have invalid LARS we stop processing
             }
 
             // 6. Map bulkupload course objects to course objects
@@ -110,8 +112,8 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 await CreateErrorFileAsync(log, fileName, fileStream, cloudStorageAccount, containerName, errors);
             }
 
-            // 7. Delete existing courses for the provier.
-            var result = await DeleteCoursesForProvider(log, ukPRN);
+            // 7. Delete existing courses for the provider.
+            var result = await DeleteBulkUploadCourses(log, ukPRN);
             if(result.IsFailure)
             {
                 log.LogError($"Failed to delete bulk upload courses for provider {ukPRN}.");
@@ -129,7 +131,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
         }
 
         private IProvider FindProvider(int ukPRN)
-        {
+        { 
             IProvider provider = null;
             try
             {
@@ -147,10 +149,18 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
         }
 
 
-        public async Task<IResult> DeleteCoursesForProvider(ILogger log, int ukPRN)
+        public async Task<IResult> DeleteBulkUploadCourses(ILogger log, int ukPRN)
         {
             log.LogDebug($"Deleting bulk upload courses for Provider {ukPRN}");
             return await _courseService.DeleteBulkUploadCourses(ukPRN);
+        }
+
+        public async Task<IResult> ArchiveCourses(ILogger log, int ukPRN)
+        {
+            log.LogDebug($"Archiving courses for Provider {ukPRN}");
+            var foo = _courseService.ChangeCourseRunStatusesForUKPRNSelection(ukPRN, (int)RecordStatus.BulkUploadPending, (int)RecordStatus.Archived).Result;
+            var bar = _courseService.ChangeCourseRunStatusesForUKPRNSelection(ukPRN, (int)RecordStatus.BulkUploadReadyToGoLive, (int)RecordStatus.Archived).Result;
+            return await _courseService.ChangeCourseRunStatusesForUKPRNSelection(ukPRN, (int)RecordStatus.Live, (int)RecordStatus.Archived);
         }
 
         private async Task UploadCourses(ILogger log, List<Course> courses)
@@ -502,7 +512,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             }
         }
 
-        private List<LarsSearchResultItem> SearchLarsAsync(ILarsSearchCriteria criteria)
+        private List<LarsSearchResultItem> SearchLarsAsync(ILogger log, ILarsSearchCriteria criteria)
         {
             List<LarsSearchResultItem> results = new List<LarsSearchResultItem>();
             var result = Task.Run(async () => await _larsSearchService.SearchAsync(criteria)).Result;
@@ -518,12 +528,16 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                     }
                 }
             }
+            else
+            {
+                log.LogError($"Failed to search LARS for [{criteria.Search}] : {result.Error}");
+            }
             //).Result.Value.Value.ToList()
 
             return results;
         }
 
-        public List<BulkUploadCourse> PopulateLARSData(List<BulkUploadCourse> bulkUploadcourses, out List<string> errors)
+        public List<BulkUploadCourse> PopulateLARSData(ILogger log, List<BulkUploadCourse> bulkUploadcourses, out List<string> errors)
         {
             errors = new List<string>();
             List<int> totalErrorList = new List<int>();
@@ -541,7 +555,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 if (cachedResult == null)
                 {
 
-                    result = SearchLarsAsync(criteria);
+                    result = SearchLarsAsync(log, criteria);
                     var qual = result.FirstOrDefault();
                     if (qual != null)
                     {
@@ -617,7 +631,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 else
                 {
-                    errors.Add($"Line {bulkUploadcourse.BulkUploadLineNumber}, LARS_QAN = { bulkUploadcourse.LearnAimRef }, invalid LARS");
+                    errors.Add($"Line {bulkUploadcourse.BulkUploadLineNumber}, LARS_QAN = { bulkUploadcourse.LearnAimRef }, failed to search LARS (possible system error contacting LARS search service).");
                 }
 
             }
@@ -1014,7 +1028,8 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             {
                 InProgress = (rowCount > 0),
                 StartedTimestamp = (rowCount > 0) ? DateTime.Now : default(DateTime?),
-                TotalRowCount = rowCount            
+                TotalRowCount = rowCount,
+                PublishInProgress = false,
             };
             provider.BulkUploadStatus = bustatus;
 

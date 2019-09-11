@@ -47,7 +47,8 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider.Test.Integration
         {
             // Arrange
 
-            int ukPRN = 10003954;
+            //int ukPRN = 10003954;  // Liverpool City Council
+            int ukPRN = 10000712;  // University College Birmingham
 
             ILarsSearchService larsSearchService = LarsSearchServiceTestFactory.GetService();
             ICourseService courseService = CourseServiceTestFactory.GetService();
@@ -74,7 +75,8 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider.Test.Integration
         {
             // Arrange
 
-            int ukPRN = 10003954;
+            //int ukPRN = 10003954;  // Liverpool City Council
+            int ukPRN = 10000712;  // University College Birmingham
 
             ILarsSearchService larsSearchService = LarsSearchServiceTestFactory.GetService();
             ICourseService courseService = CourseServiceTestFactory.GetService();
@@ -86,7 +88,8 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider.Test.Integration
 
             // Act
 
-            var result = Task.Run(async () => await importer.DeleteCoursesForProvider(logger, ukPRN)).Result;
+            var result1 = Task.Run(async () => await importer.DeleteBulkUploadCourses(logger, ukPRN)).Result;
+            var result2 = Task.Run(async () => await importer.ArchiveCourses(logger, ukPRN)).Result;
 
             // Assert
 
