@@ -954,6 +954,7 @@ namespace Dfc.CourseDirectory.Services.CourseService
 
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _settings.ApiKey);
+            httpClient.Timeout = new TimeSpan(0, 10, 0);
             var response = await httpClient.GetAsync(new Uri(_deleteBulkUploadCoursesUri.AbsoluteUri
                 + "?UKPRN=" + UKPRN));
             _logger.LogHttpResponseMessage("Delete Bulk Upload Course Status http response", response);
