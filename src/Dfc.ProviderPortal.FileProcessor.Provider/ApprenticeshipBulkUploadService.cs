@@ -38,11 +38,13 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
         private readonly IApprenticeshipService _apprenticeshipService;
         private readonly IVenueService _venueService;
         private readonly IProviderService _providerService;
+       
         public ApprenticeshipBulkUploadService(
             ILogger<ApprenticeshipBulkUploadService> logger,
             IApprenticeshipService apprenticeshipService,
             IVenueService venueService,
             IProviderService providerService
+          
             )
         {
             Throw.IfNull(logger, nameof(logger));
@@ -51,6 +53,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             _apprenticeshipService = apprenticeshipService;
             _venueService = venueService;
             _providerService = providerService;
+           
         }
 
 
@@ -71,7 +74,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 log.LogError($"Failed to parse the Provider's UK PRN from the filename {fileName}. Cannot proceed.");
                 return;
             }
-            IProvider provider = FindProvider(ukPRN);
+            IProvider provider = await FindProvider(ukPRN);
             if (null == provider)
             {
                 log.LogError($"Failed to find provider with PRN {ukPRN}. Cannot proceed.");
@@ -110,22 +113,23 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             return count;
         }
 
-        private IProvider FindProvider(int ukPRN)
+        private async Task<IProvider> FindProvider(int ukPRN)
         {
             IProvider provider = null;
             try
             {
-                var providerSearchResult = Task.Run(async () => await _providerService.GetProviderByPRNAsync(new ProviderSearchCriteria(ukPRN.ToString()))).Result;
+                var providerSearchResult =  await _providerService.GetProviderByPRNAsync(new ProviderSearchCriteria(ukPRN.ToString()));
                 if (providerSearchResult.IsSuccess)
                 {
-                    provider = providerSearchResult.Value.Value.FirstOrDefault();
+                    provider =  providerSearchResult.Value.Value.FirstOrDefault();
                 }
             }
             catch (Exception)
             {
-                // @ToDo: decide how to handle this
+                throw new Exception($"Unable to add Provider");
             }
-            return provider;
+
+            return  provider;
         }
 
         public List<string> ValidateAndUploadCSV(ILogger log, Stream stream, string fileName)
