@@ -6,13 +6,17 @@ using Dfc.CourseDirectory.Models.Enums;
 using Dfc.CourseDirectory.Models.Helpers;
 using Dfc.CourseDirectory.Models.Interfaces.Apprenticeships;
 using Dfc.CourseDirectory.Models.Interfaces.Auth;
+using Dfc.CourseDirectory.Models.Interfaces.Providers;
 using Dfc.CourseDirectory.Models.Models.Apprenticeships;
 using Dfc.CourseDirectory.Models.Models.Auth;
 using Dfc.CourseDirectory.Models.Models.Courses;
+using Dfc.CourseDirectory.Models.Models.Providers;
 using Dfc.CourseDirectory.Models.Models.Regions;
 using Dfc.CourseDirectory.Models.Models.Venues;
 using Dfc.CourseDirectory.Services.Interfaces.ApprenticeshipService;
+using Dfc.CourseDirectory.Services.Interfaces.ProviderService;
 using Dfc.CourseDirectory.Services.Interfaces.VenueService;
+using Dfc.CourseDirectory.Services.ProviderService;
 using Dfc.CourseDirectory.Services.VenueService;
 using Dfc.ProviderPortal.FileProcessor.Common;
 using Microsoft.Extensions.Logging;
@@ -33,10 +37,14 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
         private readonly ILogger<ApprenticeshipBulkUploadService> _logger;
         private readonly IApprenticeshipService _apprenticeshipService;
         private readonly IVenueService _venueService;
+        private readonly IProviderService _providerService;
+       
         public ApprenticeshipBulkUploadService(
             ILogger<ApprenticeshipBulkUploadService> logger,
             IApprenticeshipService apprenticeshipService,
-            IVenueService venueService
+            IVenueService venueService,
+            IProviderService providerService
+          
             )
         {
             Throw.IfNull(logger, nameof(logger));
@@ -44,9 +52,53 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             _logger = logger;
             _apprenticeshipService = apprenticeshipService;
             _venueService = venueService;
+            _providerService = providerService;
+           
         }
 
-       
+
+        public async Task ProcessApprenticeshipFileAsync(ILogger log, CloudStorageAccount cloudStorageAccount, string containerName, string fileName, Stream stream)
+        {
+            // 1. Check that this is a file we want to process.
+            if (ToBeIgnored(log, fileName, stream))
+            {
+                // @ToDo: Tell someone.
+                log.LogInformation($"Ignoring file [{fileName}].");
+                return;
+            }
+
+            // 2. Parse the UK PRN from the filename
+            int ukPRN = GetUKPRNFromFilename(fileName);
+            if (0 == ukPRN)
+            {
+                log.LogError($"Failed to parse the Provider's UK PRN from the filename {fileName}. Cannot proceed.");
+                return;
+            }
+            IProvider provider = await FindProvider(ukPRN);
+            if (null == provider)
+            {
+                log.LogError($"Failed to find provider with PRN {ukPRN}. Cannot proceed.");
+                return;
+            }
+
+
+            // 3. Set the bulk upload status on the provider to "in progress"
+            await SetBulkUploadStatus(log, provider, stream, 1);
+
+            // 4. Parse the file.
+
+            var bulkUploadCourses = ValidateAndUploadCSV(log, stream, fileName); 
+         
+
+            // 5. Mark as completed.
+            await MarkAsProcessedAsync(log, fileName, stream, cloudStorageAccount, containerName);
+
+            await ClearBulkUploadStatus(log, provider,stream);
+
+            log.LogInformation($"Successfully processed file [{fileName}]");
+        }
+
+
         public int CountCsvLines(Stream stream)
         {
             Throw.IfNull(stream, nameof(stream));
@@ -61,24 +113,34 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             return count;
         }
 
+        private async Task<IProvider> FindProvider(int ukPRN)
+        {
+            IProvider provider = null;
+            try
+            {
+                var providerSearchResult =  await _providerService.GetProviderByPRNAsync(new ProviderSearchCriteria(ukPRN.ToString()));
+                if (providerSearchResult.IsSuccess)
+                {
+                    provider =  providerSearchResult.Value.Value.FirstOrDefault();
+                }
+            }
+            catch (Exception)
+            {
+                throw new Exception($"Unable to add Provider");
+            }
 
+            return  provider;
+        }
 
         public List<string> ValidateAndUploadCSV(ILogger log, Stream stream, string fileName)
         {
-
             Throw.IfNull(stream, nameof(stream));
           
             List<string> errors = new List<string>();
             List<ApprenticeshipCsvRecord> records = new List<ApprenticeshipCsvRecord>();
             Dictionary<string, string> duplicateCheck = new Dictionary<string, string>();
 
-            // 1. Check that this is a file we want to process.
-            if (ToBeIgnored(log, fileName, stream))
-            {
-                // @ToDo: Tell someone.
-                log.LogInformation($"Ignoring file [{fileName}].");
-                return errors;
-            }
+          
             int processedRowCount = 0;
             int ukPRN = GetUKPRNFromFilename(fileName);
             try
@@ -91,10 +153,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                     {
 
                         // Validate the header row.
-                        ValidateHeader(csv);
+                        ValidateHeader(csv);                       
 
-                        var classMap =
-                            new ApprenticeshipCsvRecordMap(_apprenticeshipService, _venueService);
+                        var classMap = new ApprenticeshipCsvRecordMap(_apprenticeshipService, _venueService);
+
                         csv.Configuration.RegisterClassMap(classMap);
                         bool containsDuplicates = false;
                         while (csv.Read())
@@ -122,7 +184,9 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             }
 
                             records.Add(record);
+                       
                             processedRowCount++;
+
                         }
 
                         if (containsDuplicates)
@@ -135,6 +199,8 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                     {
                         throw new Exception("The selected file is empty");
                     }
+
+        
                 }
 
                 var result = _apprenticeshipService.DeleteBulkUploadApprenticeships(ukPRN).Result;
@@ -1513,6 +1579,54 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             }
 
 
+        }
+
+        public async Task<bool> SetBulkUploadStatus(ILogger log, IProvider provider, Stream stream, int rowCount = 0)
+        {
+           
+               BulkUploadStatus bustatus = new BulkUploadStatus()
+            {
+                InProgress = (rowCount > 0),
+                   StartedTimestamp = (rowCount > 0) ? DateTime.Now : default(DateTime?),
+                TotalRowCount = rowCount,
+                PublishInProgress = false,
+            };
+            provider.BulkUploadStatus = bustatus;
+
+            var result = await _providerService.UpdateProviderDetails(provider);
+            if (result.IsFailure)
+            {
+                log.LogError($"Failed to update bulk upload status on provider {provider.ProviderName}");
+                return false;
+            }
+
+            return true;
+        }
+
+        private async Task MarkAsProcessedAsync(ILogger log, string fileName, Stream stream, CloudStorageAccount cloudStorageAccount, string containerName)
+        {
+            var destinationFileName = GenerateProcessedFilename(fileName);
+            var copyResult = await CopyBlob(cloudStorageAccount, containerName, fileName, containerName, destinationFileName);
+            if (Microsoft.WindowsAzure.Storage.Blob.CopyStatus.Success != copyResult.Status)
+            {
+                // @ToDo: Tell someone.
+                return;
+            }
+
+            // Remove the source file. This makes the process look like a rename rather than a copy.
+            await DeleteBlob(cloudStorageAccount, containerName, fileName);
+        }
+
+        public async Task<bool> ClearBulkUploadStatus(ILogger log, IProvider provider, Stream stream)
+        {
+            return await SetBulkUploadStatus(log, provider, stream, 0);
+        }
+
+        private string GenerateProcessedFilename(string fileName)
+        {
+            string processedSuffix = DateTime.UtcNow.ToString("yyyyMMddHHmmss") + ".processed";
+            string processedFileName = $"{fileName}.{processedSuffix}";
+            return processedFileName;
         }
     }
 }
