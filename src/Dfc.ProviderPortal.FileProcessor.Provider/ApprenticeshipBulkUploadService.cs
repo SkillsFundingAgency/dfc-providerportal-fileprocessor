@@ -229,25 +229,25 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 errors.Add(errmsg);
                
                 log.LogCritical(ex, "ProviderCsvFileImporter failed.");
-                return null;
+                return errors;
             }
             catch (FieldValidationException ex)
             {
                 errors.Add($"{ex.Message}");
                 log.LogCritical(ex, "ProviderCsvFileImporter failed.");
-                return null;
+                return errors;
             }
             catch (BadDataException ex)
             {
                 errors.Add($"{ex.Message}");
                 log.LogCritical(ex, "ProviderCsvFileImporter failed.");
-                return null;
+                return errors;
             }
             catch (Exception ex)
             {
                 errors.Add($"{ex.Message}");              
                 log.LogCritical(ex, "ProviderCsvFileImporter failed.");
-                return null;
+                return errors;
 
             }
 
