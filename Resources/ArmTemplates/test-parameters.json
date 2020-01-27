@@ -43,6 +43,9 @@
     },
     "providerApiUrl": {
       "value": "https://apim.instance/api/provider"
+    },
+    "apprenticeshipApiUrl": {
+      "value": "https://apim.instance/api/apprenticeship"
     }
   }
 }
