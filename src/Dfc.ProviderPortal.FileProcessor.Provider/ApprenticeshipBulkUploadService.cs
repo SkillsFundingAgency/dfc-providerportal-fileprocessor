@@ -192,6 +192,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                         if (containsDuplicates)
                         {
                             throw new BadDataException(csv.Context, string.Join(";", errors));
+
                         }
                     }
 
@@ -226,22 +227,27 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 string errmsg = $"Invalid header row. {ex.Message.FirstSentence()}";
 
                 errors.Add(errmsg);
-                throw;
+               
+                log.LogCritical(ex, "ProviderCsvFileImporter failed.");
+                return null;
             }
             catch (FieldValidationException ex)
             {
                 errors.Add($"{ex.Message}");
-                throw;
+                log.LogCritical(ex, "ProviderCsvFileImporter failed.");
+                return null;
             }
             catch (BadDataException ex)
             {
                 errors.Add($"{ex.Message}");
-                throw;
+                log.LogCritical(ex, "ProviderCsvFileImporter failed.");
+                return null;
             }
             catch (Exception ex)
             {
-                errors.Add($"{ex.Message}");
-                throw;
+                errors.Add($"{ex.Message}");              
+                log.LogCritical(ex, "ProviderCsvFileImporter failed.");
+                return null;
 
             }
 
