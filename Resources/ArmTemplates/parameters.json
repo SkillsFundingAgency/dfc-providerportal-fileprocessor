@@ -43,6 +43,9 @@
       },
       "providerApiUrl": {
         "value": "__providerApiUrl__"
+      },
+      "apprenticeshipApiUrl": {
+        "value": "__apprenticeshipApiUrl__"
       }
     }
   }

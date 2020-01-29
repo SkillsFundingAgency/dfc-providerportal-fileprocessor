@@ -85,6 +85,12 @@
       "metadata": {
         "description": "Url to the provider API on APIM"
       }
+    },
+    "apprenticeshipApiUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Url to the CD apprenticeship API on APIM"
+      }
     }
   },
   "variables": {
@@ -260,6 +266,14 @@
               {
                 "name": "containerName",
                 "value": "provider-files"
+              },
+              {
+                "name": "ApprenticeshipServiceSettings__ApiUrl",
+                "value": "[parameters('apprenticeshipApiUrl')]"
+              },
+              {
+                "name": "ApprenticeshipServiceSettings__ApiKey",
+                "value": "[parameters('apimKey')]"
               }
             ]
           },
