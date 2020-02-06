@@ -204,16 +204,15 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
         
                 }
 
-                var result = _apprenticeshipService.DeleteBulkUploadApprenticeships(ukPRN).Result;
+                var archivingApprenticeships = _apprenticeshipService.ChangeApprenticeshipStatusesForUKPRNSelection(ukPRN, (int)RecordStatus.Live, (int)RecordStatus.Archived);
 
-                if (result.IsSuccess)
-                {
+               
                     var apprenticeships = ApprenticeshipCsvRecordToApprenticeship(records, ukPRN);
                     if (apprenticeships.Any())
                     {
                         errors.AddRange(UploadApprenticeships(apprenticeships));
                     }
-                }
+                
                 else
                 {
                     throw new Exception($"Unable to delete bulk upload apprenticeships for {ukPRN}");
