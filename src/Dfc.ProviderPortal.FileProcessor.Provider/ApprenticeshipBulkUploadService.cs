@@ -7,7 +7,6 @@ using Dfc.CourseDirectory.Models.Helpers;
 using Dfc.CourseDirectory.Models.Interfaces.Apprenticeships;
 using Dfc.CourseDirectory.Models.Interfaces.Auth;
 using Dfc.CourseDirectory.Models.Models.Apprenticeships;
-using Dfc.CourseDirectory.Models.Models.Auth;
 using Dfc.CourseDirectory.Models.Models.Courses;
 using Dfc.CourseDirectory.Models.Models.Regions;
 using Dfc.CourseDirectory.Models.Models.Venues;
@@ -21,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -29,10 +27,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 {
     public class ApprenticeshipBulkUploadService : FileImporter, IApprenticeshipBulkUploadService
     {
-
         private readonly ILogger<ApprenticeshipBulkUploadService> _logger;
         private readonly IApprenticeshipService _apprenticeshipService;
         private readonly IVenueService _venueService;
+
         public ApprenticeshipBulkUploadService(
             ILogger<ApprenticeshipBulkUploadService> logger,
             IApprenticeshipService apprenticeshipService,
@@ -46,7 +44,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             _venueService = venueService;
         }
 
-       
         public int CountCsvLines(Stream stream)
         {
             Throw.IfNull(stream, nameof(stream));
@@ -61,13 +58,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             return count;
         }
 
-
-
         public List<string> ValidateAndUploadCSV(ILogger log, Stream stream, string fileName)
         {
-
             Throw.IfNull(stream, nameof(stream));
-          
+
             List<string> errors = new List<string>();
             List<ApprenticeshipCsvRecord> records = new List<ApprenticeshipCsvRecord>();
             Dictionary<string, string> duplicateCheck = new Dictionary<string, string>();
@@ -89,7 +83,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                     stream.Seek(0, SeekOrigin.Begin);
                     using (var csv = new CsvReader(reader))
                     {
-
                         // Validate the header row.
                         ValidateHeader(csv);
 
@@ -112,7 +105,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                                 var duplicateRow = duplicateCheck[record.Base64Row];
                                 errors.Add(
                                     $"Duplicate entries detected on rows {duplicateRow}, and {record.RowNumber}.");
-
                             }
 
                             if (containsDuplicates == false)
@@ -137,24 +129,18 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                     }
                 }
 
-                var result = _apprenticeshipService.DeleteBulkUploadApprenticeships(ukPRN).Result;
+                var archivingApprenticeships = _apprenticeshipService.ChangeApprenticeshipStatusesForUKPRNSelection(ukPRN, (int)RecordStatus.Live, (int)RecordStatus.Archived);
 
-                if (result.IsSuccess)
+                var apprenticeships = ApprenticeshipCsvRecordToApprenticeship(records, ukPRN);
+                if (apprenticeships.Any())
                 {
-                    var apprenticeships = ApprenticeshipCsvRecordToApprenticeship(records, ukPRN);
-                    if (apprenticeships.Any())
-                    {
-                        errors.AddRange(UploadApprenticeships(apprenticeships));
-                    }
+                    errors.AddRange(UploadApprenticeships(apprenticeships));
                 }
                 else
                 {
                     throw new Exception($"Unable to delete bulk upload apprenticeships for {ukPRN}");
                 }
-
-
             }
-
             catch (HeaderValidationException ex)
             {
                 string errmsg = $"Invalid header row. {ex.Message.FirstSentence()}";
@@ -176,7 +162,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             {
                 errors.Add($"{ex.Message}");
                 throw;
-
             }
 
             return errors;
@@ -191,6 +176,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             csv.ReadHeader();
             csv.ValidateHeader<ApprenticeshipCsvRecord>();
         }
+
         private static string RemoveWhiteSpace(string value)
         {
             return Regex.Replace(value, @"\s+", "");
@@ -210,6 +196,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             }
             return errors;
         }
+
         private static string Base64Encode(IReaderRow row)
         {
             row.TryGetField<string>("STANDARD_CODE", out string STANDARD_CODE);
@@ -238,7 +225,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             List<ApprenticeshipCsvRecord> records, int ukPRN)
         {
             List<Apprenticeship> apprenticeships = new List<Apprenticeship>();
-            
 
             foreach (var record in records)
             {
@@ -259,7 +245,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             ApprenticeshipTitle = record.Framework == null
                                 ? record.Standard.StandardName
                                 : record.Framework.NasTitle,
-                          //  ProviderId = userDetails.ProviderID ?? Guid.Empty,
+                            //  ProviderId = userDetails.ProviderID ?? Guid.Empty,
                             ProviderUKPRN = ukPRN,
                             ApprenticeshipLocations = record.ApprenticeshipLocations,
                             ApprenticeshipType = record.ApprenticeshipType,
@@ -280,11 +266,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             ContactWebsite = record.CONTACT_URL,
                             RecordStatus = record.ErrorsList.Any() ? RecordStatus.BulkUploadPending : RecordStatus.BulkUploadReadyToGoLive,
                             CreatedDate = DateTime.Now,
-                           // CreatedBy = userDetails.UserId.ToString(),
+                            // CreatedBy = userDetails.UserId.ToString(),
                             BulkUploadErrors = record.ErrorsList
                         });
                 }
-
             }
             return apprenticeships;
         }
@@ -307,6 +292,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 return existingApprenticeships.FirstOrDefault(x => x.ApprenticeshipLocations.Any(y => y.ApprenticeshipLocationType == (ApprenticeshipLocationType)record.DELIVERY_METHOD));
             }
         }
+
         private ApprenticeshipLocation CreateApprenticeshipLocation(ApprenticeshipCsvRecord record)
         {
             Venue venue = null;
@@ -319,7 +305,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 Id = Guid.NewGuid(),
                 Name = venue?.VenueName,
                 CreatedDate = DateTime.Now,
-               // CreatedBy = authUserDetails.Email,
+                // CreatedBy = authUserDetails.Email,
                 ApprenticeshipLocationType = (ApprenticeshipLocationType)record.DELIVERY_METHOD,
                 LocationType = LocationType.Venue,
                 RecordStatus = record.ErrorsList.Any() ? RecordStatus.BulkUploadPending : RecordStatus.BulkUploadReadyToGoLive,
@@ -348,7 +334,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 Radius = record.RADIUS,
                 DeliveryModes = record.DELIVERY_MODE
             };
-
         }
 
         internal bool? NationalOrAcrossEngland(bool? national, bool? acrossEngland)
@@ -366,6 +351,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             List<string> errors = new List<string>() { error };
             await CreateErrorFileAsync(log, fileName, stream, cloudStorageAccount, containerName, errors);
         }
+
         private async Task CreateErrorFileAsync(ILogger log, string fileName, Stream stream, CloudStorageAccount cloudStorageAccount, string containerName, IEnumerable<string> errors)
         {
             var errorFileName = GenerateErrorFilename(fileName);
@@ -408,6 +394,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             bool ignore = fileName.Contains("Archive") || fileName.EndsWith(".processed") || fileName.EndsWith(".error");
             return ignore;
         }
+
         internal enum DeliveryMethod
         {
             Undefined = 0,
@@ -430,6 +417,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             {
                 this.ApprenticeshipLocations = new List<ApprenticeshipLocation>();
             }
+
             public int? STANDARD_CODE { get; set; }
             public int? STANDARD_VERSION { get; set; }
             public int? FRAMEWORK_CODE { get; set; }
@@ -448,23 +436,31 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             public bool? NATIONAL_DELIVERY { get; set; }
             public string REGION { get; set; }
             public string SUB_REGION { get; set; }
+
             [Ignore]
             public ApprenticeshipType ApprenticeshipType { get; set; }
+
             [Ignore]
             public List<BulkUploadError> ErrorsList { get; set; }
+
             [Ignore]
             public List<string> RegionsList { get; set; }
+
             [Ignore]
             public IStandardsAndFrameworks Standard { get; set; }
+
             [Ignore]
             public IStandardsAndFrameworks Framework { get; set; }
+
             public List<ApprenticeshipLocation> ApprenticeshipLocations { get; set; }
+
             [Ignore]
             public int RowNumber { get; set; }
+
             [Ignore]
             public string Base64Row { get; set; }
-
         }
+
         private class ApprenticeshipCsvRecordMap : ClassMap<ApprenticeshipCsvRecord>
         {
             private readonly IApprenticeshipService _apprenticeshipService;
@@ -477,11 +473,9 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             {
                 Throw.IfNull(apprenticeshipService, nameof(apprenticeshipService));
                 Throw.IfNull(venueService, nameof(venueService));
-              
+
                 _apprenticeshipService = apprenticeshipService;
                 _venueService = venueService;
-              
-
 
                 Map(m => m.STANDARD_CODE).ConvertUsing(Mandatory_Checks_STANDARD_CODE);
                 Map(m => m.STANDARD_VERSION).ConvertUsing(Mandatory_Checks_STANDARD_VERSION);
@@ -505,7 +499,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 Map(m => m.SUB_REGION);
                 Map(m => m.ApprenticeshipType).ConvertUsing((row) =>
                 {
-
                     row.TryGetField("STANDARD_CODE", out string standardCode);
                     if (!string.IsNullOrWhiteSpace(standardCode))
                     {
@@ -513,21 +506,15 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                     }
 
                     return ApprenticeshipType.FrameworkCode;
-
-
-
                 });
                 Map(m => m.RegionsList).ConvertUsing(GetRegionList);
                 Map(m => m.ErrorsList).ConvertUsing(ValidateData);
                 Map(m => m.RowNumber).ConvertUsing(row => row.Context.RawRow);
                 Map(m => m.Base64Row).ConvertUsing(Base64Encode);
-
-
-
             }
 
-
             #region Mandatory Checks
+
             private IStandardsAndFrameworks Mandatory_Checks_GetStandard(IReaderRow row)
             {
                 var standardCode = Mandatory_Checks_STANDARD_CODE(row);
@@ -558,6 +545,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
                 return null;
             }
+
             private int? Mandatory_Checks_STANDARD_CODE(IReaderRow row)
             {
                 int? value = ValueMustBeNumericIfPresent(row, "STANDARD_CODE");
@@ -567,6 +555,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return value;
             }
+
             private int? Mandatory_Checks_STANDARD_VERSION(IReaderRow row)
             {
                 int? value = ValueMustBeNumericIfPresent(row, "STANDARD_VERSION");
@@ -574,10 +563,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 {
                     ValuesForBothStandardAndFrameworkCannotBePresent(row);
                     row.TryGetField<int?>("STANDARD_CODE", out int? STANDARD_CODE);
-
                 }
                 return value;
             }
+
             private IStandardsAndFrameworks Mandatory_Checks_GetFramework(IReaderRow row)
             {
                 var frameworkCode = Mandatory_Checks_FRAMEWORK_CODE(row);
@@ -601,7 +590,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                         {
                             throw new BadDataException(row.Context, $"Validation error on row {row.Context.Row}. Missing Pathway Type.");
                         }
-
                     }
                     else
                     {
@@ -616,6 +604,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
                 return null;
             }
+
             private int? Mandatory_Checks_FRAMEWORK_CODE(IReaderRow row)
             {
                 int? value = ValueMustBeNumericIfPresent(row, "FRAMEWORK_CODE");
@@ -625,6 +614,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return value;
             }
+
             private int? Mandatory_Checks_FRAMEWORK_PROG_TYPE(IReaderRow row)
             {
                 int? value = ValueMustBeNumericIfPresent(row, "FRAMEWORK_PROG_TYPE");
@@ -634,6 +624,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return value;
             }
+
             private int? Mandatory_Checks_FRAMEWORK_PATHWAY_CODE(IReaderRow row)
             {
                 int? value = ValueMustBeNumericIfPresent(row, "FRAMEWORK_PATHWAY_CODE");
@@ -643,6 +634,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return value;
             }
+
             private DeliveryMethod Mandatory_Checks_DELIVERY_METHOD(IReaderRow row)
             {
                 string fieldName = "DELIVERY_METHOD";
@@ -659,9 +651,9 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return deliveryMethod;
             }
+
             private int? Mandatory_Checks_RADIUS(IReaderRow row)
             {
-
                 var deliveryMethod = Mandatory_Checks_DELIVERY_METHOD(row);
                 if (deliveryMethod != DeliveryMethod.Both)
                 {
@@ -678,6 +670,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 string fieldName = "RADIUS";
                 return ValueMustBeNumericIfPresent(row, fieldName);
             }
+
             private List<int> Mandatory_Checks_DELIVERY_MODE(IReaderRow row)
             {
                 var deliveryMethod = Mandatory_Checks_DELIVERY_METHOD(row);
@@ -701,15 +694,14 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                         {
                             return new List<int>();
                         }
-
                     }
 
                     return deliveryModes.Values.ToList();
-
                 }
 
                 return new List<int>();
             }
+
             private bool? Mandatory_Checks_ACROSS_ENGLAND(IReaderRow row)
             {
                 var deliveryMethod = Mandatory_Checks_DELIVERY_METHOD(row);
@@ -723,6 +715,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
                 return null;
             }
+
             private bool? Mandatory_Checks_NATIONAL_DELIVERY(IReaderRow row)
             {
                 var deliveryMethod = Mandatory_Checks_DELIVERY_METHOD(row);
@@ -736,6 +729,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
                 return null;
             }
+
             private List<string> GetRegionList(IReaderRow row)
             {
                 var deliveryMethod = Mandatory_Checks_DELIVERY_METHOD(row);
@@ -769,7 +763,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                         }
                         regions.AddRange(subregionCodes);
                     }
-
                 }
 
                 return new List<string>(regions.Distinct());
@@ -777,20 +770,20 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
             private bool? Mandatory_Checks_Bool(IReaderRow row, string fieldName)
             {
-
                 row.TryGetField<string>(fieldName, out string value);
 
                 switch (value.ToUpper())
                 {
                     case "YES":
                         return true;
+
                     case "NO":
                         return false;
-
                 }
 
                 return null;
             }
+
             private List<Venue> Mandatory_Checks_VENUE(IReaderRow row)
             {
                 var deliveryMethod = Mandatory_Checks_DELIVERY_METHOD(row);
@@ -807,7 +800,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                         {
                             return null;
                         }
-
                     }
                     string fieldName = "VENUE";
                     row.TryGetField<string>(fieldName, out string value);
@@ -823,15 +815,12 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                     {
                         return venues;
                     }
-
-
                 }
-
 
                 return null;
             }
 
-            #endregion
+            #endregion Mandatory Checks
 
             #region Field Validation
 
@@ -885,7 +874,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                         LineNumber = row.Context.Row,
                         Header = fieldName,
                         Error = $"Validation error on row {row.Context.Row}. Field {fieldName} is required."
-
                     });
                 }
                 if (!String.IsNullOrEmpty(value) && value.Length > 750)
@@ -899,6 +887,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return errors;
             }
+
             private List<BulkUploadError> Validate_APPRENTICESHIP_WEBPAGE(IReaderRow row)
             {
                 List<BulkUploadError> errors = new List<BulkUploadError>();
@@ -906,12 +895,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 row.TryGetField<string>(fieldName, out string value);
                 if (!String.IsNullOrWhiteSpace(value))
                 {
-
                     value = HTTPCheck(value).Trim();
                     var regex = @"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$";
                     if (!Regex.IsMatch(value, regex))
                     {
-
                         errors.Add(new BulkUploadError
                         {
                             LineNumber = row.Context.Row,
@@ -919,12 +906,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             Error =
                                 $"Validation error on row {row.Context.Row}. Field {fieldName} format of URL is incorrect."
                         });
-
                     }
 
                     if (value.Length > 255)
                     {
-
                         errors.Add(new BulkUploadError
                         {
                             LineNumber = row.Context.Row,
@@ -932,12 +917,12 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             Error =
                                 $"Validation error on row {row.Context.Row}. Field {fieldName} maximum length is 255 characters."
                         });
-
                     }
                 }
 
                 return errors;
             }
+
             private List<BulkUploadError> Validate_CONTACT_EMAIL(IReaderRow row)
             {
                 List<BulkUploadError> errors = new List<BulkUploadError>();
@@ -980,6 +965,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return errors;
             }
+
             private List<BulkUploadError> Validate_CONTACT_PHONE(IReaderRow row)
             {
                 List<BulkUploadError> errors = new List<BulkUploadError>();
@@ -1020,9 +1006,9 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return errors;
             }
+
             private List<BulkUploadError> Validate_CONTACT_URL(IReaderRow row)
             {
-
                 List<BulkUploadError> errors = new List<BulkUploadError>();
                 string fieldName = "CONTACT_URL";
                 row.TryGetField(fieldName, out string value);
@@ -1053,6 +1039,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return errors;
             }
+
             private List<BulkUploadError> Validate_DELIVERY_METHOD(IReaderRow row)
             {
                 List<BulkUploadError> errors = new List<BulkUploadError>();
@@ -1082,6 +1069,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return errors;
             }
+
             private List<BulkUploadError> Validate_VENUE(IReaderRow row)
             {
                 List<BulkUploadError> errors = new List<BulkUploadError>();
@@ -1124,6 +1112,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return errors;
             }
+
             private List<BulkUploadError> Validate_RADIUS(IReaderRow row)
             {
                 List<BulkUploadError> errors = new List<BulkUploadError>();
@@ -1139,7 +1128,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             LineNumber = row.Context.Row,
                             Header = fieldName,
                             Error = $"Validation error on row {row.Context.Row}. Field {fieldName} must be a valid number"
-
                         });
                         return errors;
                     }
@@ -1151,12 +1139,9 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             LineNumber = row.Context.Row,
                             Header = fieldName,
                             Error = $"Validation error on row {row.Context.Row}. Field {fieldName} must be between 1 and 874"
-
                         });
                         return errors;
                     }
-
-
                 }
                 if (Mandatory_Checks_DELIVERY_METHOD(row) == DeliveryMethod.Both)
                 {
@@ -1170,7 +1155,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                                 LineNumber = row.Context.Row,
                                 Header = fieldName,
                                 Error = $"Validation error on row {row.Context.Row}. Field {fieldName} must have a value if not ACROSS_ENGLAND"
-
                             });
                             return errors;
                         }
@@ -1178,13 +1162,13 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
                 return errors;
             }
+
             private List<BulkUploadError> Validate_DELIVERY_MODE(IReaderRow row)
             {
                 List<BulkUploadError> errors = new List<BulkUploadError>();
 
                 string fieldName = "DELIVERY_MODE";
                 row.TryGetField(fieldName, out string value);
-
 
                 Dictionary<DeliveryMode, string> modes = new Dictionary<DeliveryMode, string>();
 
@@ -1198,7 +1182,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             LineNumber = row.Context.Row,
                             Header = fieldName,
                             Error = $"Validation error on row {row.Context.Row}. Field {fieldName} contain delivery modes if Delivery Method is BOTH"
-
                         });
                         return errors;
                     }
@@ -1213,7 +1196,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             LineNumber = row.Context.Row,
                             Header = fieldName,
                             Error = $"Validation error on row {row.Context.Row}. Field {fieldName} must be a valid Delivery Mode"
-
                         });
                         return errors;
                     }
@@ -1225,13 +1207,13 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             LineNumber = row.Context.Row,
                             Header = fieldName,
                             Error = $"Validation error on row {row.Context.Row}. Field {fieldName} must contain unique Delivery Modes"
-
                         });
                         return errors;
                     }
                 }
                 return errors;
             }
+
             private List<BulkUploadError> Validate_ACROSS_ENGLAND(IReaderRow row)
             {
                 List<BulkUploadError> errors = new List<BulkUploadError>();
@@ -1247,17 +1229,15 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             LineNumber = row.Context.Row,
                             Header = fieldName,
                             Error = $"Validation error on row {row.Context.Row}. Field {fieldName} must contain a value when Delivery Method is 'Both'"
-
                         });
 
                         return errors;
                     }
-
                 }
-
 
                 return errors;
             }
+
             private List<BulkUploadError> Validate_NATIONAL_DELIVERY(IReaderRow row)
             {
                 List<BulkUploadError> errors = new List<BulkUploadError>();
@@ -1273,16 +1253,15 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             LineNumber = row.Context.Row,
                             Header = fieldName,
                             Error = $"Validation error on row {row.Context.Row}. Field {fieldName} must contain a value when Delivery Method is 'Employer'"
-
                         });
 
                         return errors;
                     }
                 }
 
-
                 return errors;
             }
+
             private List<BulkUploadError> Validate_REGION(IReaderRow row)
             {
                 List<BulkUploadError> errors = new List<BulkUploadError>();
@@ -1304,7 +1283,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                                     LineNumber = row.Context.Row,
                                     Header = fieldName,
                                     Error = $"Validation error on row {row.Context.Row}. Field {fieldName} contains invalid Region names"
-
                                 });
                                 return errors;
                             }
@@ -1312,9 +1290,9 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                     }
                 }
 
-
                 return errors;
             }
+
             private List<BulkUploadError> Validate_SUB_REGION(IReaderRow row)
             {
                 List<BulkUploadError> errors = new List<BulkUploadError>();
@@ -1336,7 +1314,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                                     LineNumber = row.Context.Row,
                                     Header = fieldName,
                                     Error = $"Validation error on row {row.Context.Row}. Field {fieldName} contains invalid SubRegion names"
-
                                 });
                                 return errors;
                             }
@@ -1350,7 +1327,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                                 LineNumber = row.Context.Row,
                                 Header = fieldName,
                                 Error = $"Validation error on row {row.Context.Row}. Fields REGION/SUB_REGION are mandatory"
-
                             });
                         }
                     }
@@ -1358,7 +1334,8 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
                 return errors;
             }
-            #endregion
+
+            #endregion Field Validation
 
             private string HTTPCheck(string value)
             {
@@ -1369,8 +1346,8 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                 }
 
                 return "https://" + value;
-
             }
+
             private int? ValueMustBeNumericIfPresent(IReaderRow row, string fieldName)
             {
                 if (!row.TryGetField<int?>(fieldName, out var value))
@@ -1412,9 +1389,9 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
                 return null;
             }
+
             private IStandardsAndFrameworks GetFramework(int? frameworkCode, int? progType, int? pathwayCode)
             {
-
                 var result = _apprenticeshipService.GetFrameworkByCode(new FrameworkSearchCriteria
                 { FrameworkCode = frameworkCode, ProgType = progType, PathwayCode = pathwayCode }).Result;
                 if (result.IsSuccess && result.HasValue && result.Value.Any())
@@ -1449,15 +1426,13 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                             return new List<string>();
                         }
 
-
                         regionCodes.AddRange(regionCode);
-
-
                     }
                 }
 
                 return regionCodes.Distinct();
             }
+
             private IEnumerable<string> ParseSubRegionData(string subRegionList)
             {
                 var availableSubRegions = new SelectRegionModel().RegionItems.SelectMany(x => x.SubRegion);
@@ -1482,7 +1457,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                         {
                             subRegionCodeList.AddRange(listOfSubRegionCodes);
                         }
-
                     }
                 }
 
@@ -1511,10 +1485,6 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
                 return totalList;
             }
-
-
         }
     }
 }
-
-  
