@@ -14,17 +14,23 @@
     "storageConnectionString": {
       "value": "DefaultEndpointsProtocol=https;AccountName=dfcfooprovstr;AccountKey=this_is_not_a_real_account==;EndpointSuffix=core.windows.net"
     },
-    "apimKey": {
-      "value": "not-a-real-key"
-    },
     "findCoursesApiUrl": {
       "value": "https://apim.instance/api/findacourse/"
+    },
+    "findCoursesApiKey": {
+      "value": "not-a-real-key"
     },
     "venueServiceApiUrl": {
       "value": "https://apim.instance/api/venues/"
     },
+    "venueServiceApiKey": {
+      "value": "not-a-real-key"
+    },
     "courseApiUrl": {
       "value": "https://apim.instance/api/courses/"
+    },
+    "courseApiKey": {
+      "value": "not-a-real-key"
     },
     "azureSearchName": {
       "value": "AnAzureSearchInstance"
@@ -44,8 +50,14 @@
     "providerApiUrl": {
       "value": "https://apim.instance/api/provider"
     },
+    "providerApiKey": {
+      "value": "not-a-real-key"
+    },
     "apprenticeshipApiUrl": {
       "value": "https://apim.instance/api/apprenticeship"
+    },
+    "apprenticeshipApiKey": {
+      "value": "not-a-real-key"
     }
   }
 }

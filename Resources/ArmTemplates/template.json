@@ -26,16 +26,16 @@
         "description": "Connection string for the storage account to store function app files"
       }
     },
-    "apimKey": {
-      "type": "securestring",
-      "metadata": {
-        "description": "The APIM subscription key for the APIM instance"
-      }
-    },
     "findCoursesApiUrl": {
       "type": "string",
       "metadata": {
         "description":  "Url to the FindACourse API on the APIM instance"
+      }
+    },
+    "findCoursesApiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The subscription key for the find-a-course API"
       }
     },
     "venueServiceApiUrl": {
@@ -44,10 +44,22 @@
         "description": "Url to the Venues API on APIM"
       }
     },
+    "venueServiceApiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The subscription key for the venues API"
+      }
+    },
     "courseApiUrl": {
       "type": "string",
       "metadata": {
         "description": "Url to the courses API on APIM"
+      }
+    },
+    "courseApiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The subscription key for the course API"
       }
     },
     "azureSearchName": {
@@ -86,10 +98,22 @@
         "description": "Url to the provider API on APIM"
       }
     },
+    "providerApiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The subscription key for the provider API"
+      }
+    },
     "apprenticeshipApiUrl": {
       "type": "string",
       "metadata": {
         "description": "Url to the CD apprenticeship API on APIM"
+      }
+    },
+    "apprenticeshipApiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The subscription key for the apprenticeship API"
       }
     }
   },
@@ -201,7 +225,7 @@
               },
               {
                 "name": "VenueServiceSettings__ApiKey",
-                "value": "[parameters('apimKey')]"
+                "value": "[parameters('venueServiceApiKey')]"
               },
               {
                 "name": "VenueServiceSettings__ApiVersion",
@@ -237,7 +261,7 @@
               },
               {
                 "name": "FindACourseServiceSettings__ApiKey",
-                "value": "[parameters('apimKey')]"
+                "value": "[parameters('findCoursesApiKey')]"
               },
               {
                 "name": "FindACourseServiceSettings__UserName",
@@ -253,7 +277,7 @@
               },
               {
                 "name": "CourseServiceSettings__ApiKey",
-                "value": "[parameters('apimKey')]"
+                "value": "[parameters('courseApiKey')]"
               },
               {
                 "name": "ProviderServiceSettings__ApiUrl",
@@ -261,7 +285,7 @@
               },
               {
                 "name": "ProviderServiceSettings__ApiKey",
-                "value": "[parameters('apimKey')]"
+                "value": "[parameters('providerApiKey')]"
               },
               {
                 "name": "containerName",
@@ -273,7 +297,7 @@
               },
               {
                 "name": "ApprenticeshipServiceSettings__ApiKey",
-                "value": "[parameters('apimKey')]"
+                "value": "[parameters('apprenticeshipApiKey')]"
               }
             ]
           },

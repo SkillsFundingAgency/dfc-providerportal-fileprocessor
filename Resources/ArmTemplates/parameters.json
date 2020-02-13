@@ -14,17 +14,23 @@
       "storageConnectionString": {
         "value": "__providerPortalStorageConnectionStr__"
       },
-      "apimKey": {
-        "value": "__apimKey__"
-      },
       "findCoursesApiUrl": {
         "value": "__apimCoursesUrl__"
+      },
+      "findCoursesApiKey": {
+        "value": "__ApimFindACourseKey__"
       },
       "venueServiceApiUrl": {
         "value": "__venueServiceApiUrl__"
       },
+      "venueServiceApiKey": {
+        "value": "__ApimPublishCourseDirectoryKey__"
+      },
       "courseApiUrl": {
         "value": "__courseApiUrl__"
+      },
+      "courseApiKey": {
+        "value": "__ApimPublishCourseDirectoryKey__"
       },
       "azureSearchName": {
         "value": "__providerPortalAzureSearch__"
@@ -44,8 +50,14 @@
       "providerApiUrl": {
         "value": "__providerApiUrl__"
       },
+      "providerApiKey": {
+        "value": "__ApimPublishCourseDirectoryKey__"
+      },
       "apprenticeshipApiUrl": {
         "value": "__apprenticeshipApiUrl__"
+      },
+      "apprenticeshipApiKey": {
+        "value": "__ApimPublishCourseDirectoryKey__"
       }
     }
   }
