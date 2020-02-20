@@ -1,4 +1,6 @@
 # dotnet core build
+pool:
+  name: NCS - CI and CD
 
 variables:
   BuildPlatform: 'any cpu'
