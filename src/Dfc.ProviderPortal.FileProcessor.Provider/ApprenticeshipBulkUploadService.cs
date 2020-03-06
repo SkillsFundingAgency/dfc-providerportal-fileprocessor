@@ -38,6 +38,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
         private readonly IApprenticeshipService _apprenticeshipService;
         private readonly IVenueService _venueService;
         private readonly IProviderService _providerService;
+      
        
         public ApprenticeshipBulkUploadService(
             ILogger<ApprenticeshipBulkUploadService> logger,
@@ -59,6 +60,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
         public async Task ProcessApprenticeshipFileAsync(ILogger log, CloudStorageAccount cloudStorageAccount, string containerName, string fileName, Stream stream)
         {
+            
             // 1. Check that this is a file we want to process.
             if (ToBeIgnored(log, fileName, stream))
             {
@@ -155,7 +157,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
                         // Validate the header row.
                         ValidateHeader(csv);                       
 
-                        var classMap = new ApprenticeshipCsvRecordMap(_apprenticeshipService, _venueService);
+                        var classMap = new ApprenticeshipCsvRecordMap(_apprenticeshipService, _venueService, ukPRN);
 
                         csv.Configuration.RegisterClassMap(classMap);
                         bool containsDuplicates = false;
@@ -542,15 +544,18 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             private readonly IVenueService _venueService;
             private readonly IAuthUserDetails _authUserDetails;
             private List<Venue> _cachedVenues;
+            private int _ukprn;
+          
 
             public ApprenticeshipCsvRecordMap(IApprenticeshipService apprenticeshipService,
-                IVenueService venueService)
+                IVenueService venueService, int UKPRN)
             {
                 Throw.IfNull(apprenticeshipService, nameof(apprenticeshipService));
                 Throw.IfNull(venueService, nameof(venueService));
               
                 _apprenticeshipService = apprenticeshipService;
                 _venueService = venueService;
+                _ukprn = UKPRN;
               
 
 
@@ -864,12 +869,13 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
             }
             private List<Venue> Mandatory_Checks_VENUE(IReaderRow row)
             {
+               
                 var deliveryMethod = Mandatory_Checks_DELIVERY_METHOD(row);
                 if (deliveryMethod == DeliveryMethod.Classroom || deliveryMethod == DeliveryMethod.Both)
                 {
                     if (_cachedVenues == null)
                     {
-                        _cachedVenues = Task.Run(async () => await _venueService.SearchAsync(new VenueSearchCriteria(_authUserDetails.UKPRN, string.Empty)))
+                        _cachedVenues = Task.Run(async () => await _venueService.SearchAsync(new VenueSearchCriteria(_ukprn.ToString(),string.Empty)))
                             .Result
                             .Value
                             .Value
@@ -1522,9 +1528,35 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
         private string GenerateProcessedFilename(string fileName)
         {
-            string processedSuffix = DateTime.UtcNow.ToString("yyyyMMddHHmmss") + ".processed";
+            string processedSuffix = DateTime.UtcNow.ToString("yyyyMMddHHmmss") + ".processedxyz";
             string processedFileName = $"{fileName}.{processedSuffix}";
             return processedFileName;
+        }
+
+        private List<Venue> GetVenuesForProvider(int ukPrn)
+        {
+            var venues = new List<Venue>();
+            var searchCriteria = new VenueSearchCriteria(ukPrn.ToString(), string.Empty);
+
+            var result = Task.Run(async () => await _venueService.SearchAsync(searchCriteria)).Result;
+            if (result.IsSuccess)
+            {
+                var vsr = result.Value;
+                if (null != vsr)
+                {
+                    var enumerable = vsr.Value;
+                    if (null != enumerable)
+                    {
+                        venues = enumerable.ToList();
+                    }
+                }
+            }
+            else
+            {
+                throw new Exception($"Cannot process file. {result.Error}");
+            }
+
+            return venues;
         }
     }
 }
