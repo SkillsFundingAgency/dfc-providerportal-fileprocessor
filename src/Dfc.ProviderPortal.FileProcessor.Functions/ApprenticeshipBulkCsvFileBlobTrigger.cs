@@ -32,8 +32,10 @@ namespace Dfc.ProviderPortal.FileProcessor.Functions
             {
                 cloudStorageAccount = GetCloudStorageAccount("AzureWebJobsStorage");
                 containerName = Environment.GetEnvironmentVariable("containerName", EnvironmentVariableTarget.Process);
-                //fileImporter.ValidateAndUploadCSV(log,fileStream, fileName);
-               await fileImporter.ProcessApprenticeshipFileAsync(log, cloudStorageAccount, containerName, fileName, fileStream);
+                if (fileName.Contains("Apprenticeship Bulk Upload"))
+                {
+                    await fileImporter.ProcessApprenticeshipFileAsync(log, cloudStorageAccount, containerName, fileName, fileStream);
+                }
             }
             catch (Exception ex)
             {
