@@ -1528,7 +1528,7 @@ namespace Dfc.ProviderPortal.FileProcessor.Provider
 
         private string GenerateProcessedFilename(string fileName)
         {
-            string processedSuffix = DateTime.UtcNow.ToString("yyyyMMddHHmmss") + ".processedxyz";
+            string processedSuffix = DateTime.UtcNow.ToString("yyyyMMddHHmmss") + ".processed";
             string processedFileName = $"{fileName}.{processedSuffix}";
             return processedFileName;
         }
