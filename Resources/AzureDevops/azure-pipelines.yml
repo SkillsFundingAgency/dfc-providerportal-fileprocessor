@@ -19,14 +19,12 @@ trigger:
   batch: true
   branches:
     include:
-    - master
-    - dev
+    - main
 
 pr:
   branches:
     include:
-    - master
-    - dev
+    - main
 
 steps:
 
