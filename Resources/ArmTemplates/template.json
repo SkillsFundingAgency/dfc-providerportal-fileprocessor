@@ -5,7 +5,7 @@
     "functionAppPrefix": {
       "type": "string",
       "metadata": {
-        "description": "Prefix for the function app resources, in the form dfc-env-proj-fnapp"
+        "description": "Prefix for the function app resources, in the form, dfc-env-proj-fnapp"
       }
     },
     "appServicePlanName": {
