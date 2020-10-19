@@ -22,11 +22,13 @@ trigger:
   batch: true
   branches:
     include:
+    - release/*
     - main
 
 pr:
   branches:
     include:
+    - release/*
     - main
 
 steps:
@@ -74,20 +76,15 @@ steps:
   displayName: dotnet publish
   inputs:
     command: publish
-    projects: 'src/Dfc.ProviderPortal.FileProcessor.Functions/Dfc.ProviderPortal.FileProcessor.Functions.csproj'
+    projects: 'src/$(SolutionBaseName).Functions/$(SolutionBaseName).Functions.csproj'
+    
     configuration: ${{ variables.buildConfiguration }}
     arguments: '--output $(Build.ArtifactStagingDirectory)'
     publishWebProjects: false
     zipAfterPublish: true
 
-- task: CopyFiles@2
-  displayName: 'Copy Azure folder to Staging'
-  inputs:
-    SourceFolder: $(System.DefaultWorkingDirectory)\Resources\ArmTemplates
-    TargetFolder: $(build.artifactstagingdirectory)\Azure\Azure
-
 - task: PublishBuildArtifacts@1
   displayName: Publish Artifact
   inputs:
      pathtoPublish: $(Build.ArtifactStagingDirectory)
-     artifactName: Dfc.ProviderPortal.FileProcessor.Functions
+     artifactName: '$(SolutionBaseName).Functions'
