@@ -29,7 +29,7 @@ pr:
 steps:
 
 # ARM template
-- template: AzureDevOpsTemplates/Build/dfc-arm-build.yml@dfc-devops
+- template: AzureDevOpsTemplates\Build\StepTemplates\dfc-arm-build.yml@dfc-devops
   parameters:
     ArmTemplateRoot: '$(System.DefaultWorkingDirectory)\Resources\ArmTemplates'
 
