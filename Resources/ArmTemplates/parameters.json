@@ -50,6 +50,9 @@
       "providerApiUrl": {
         "value": "__providerApiUrl__"
       },
+      "providerPortalApplicationInsights": {
+        "value": "__providerportalApplicationInsights__"
+      },
       "providerApiKey": {
         "value": "__ApimPublishCourseDirectoryKey__"
       },

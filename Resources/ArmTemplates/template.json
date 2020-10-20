@@ -104,6 +104,12 @@
         "description": "The subscription key for the provider API"
       }
     },
+    "providerPortalApplicationInsights": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Insights Reference for Course Directory i.e. dfc-<env>-prov-as-ai"
+      }
+    },
     "apprenticeshipApiUrl": {
       "type": "string",
       "metadata": {
@@ -173,7 +179,7 @@
             "value": [
               {
                 "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                "value": "[reference('ppfpAppInsights').outputs.InstrumentationKey.value]"
+                "value": "[reference(resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.insights/components', parameters('providerPortalApplicationInsights').InstrumentationKey))]"
               },
               {
                 "name": "FUNCTIONS_EXTENSION_VERSION",
