@@ -53,6 +53,9 @@
     "providerApiKey": {
       "value": "not-a-real-key"
     },
+    "providerPortalApplicationInsights":{
+      "value": "dfc-dev-prov-as-ai"
+    },
     "apprenticeshipApiUrl": {
       "value": "https://apim.instance/api/apprenticeship"
     },
