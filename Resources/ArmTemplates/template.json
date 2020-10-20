@@ -179,7 +179,7 @@
             "value": [
               {
                 "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                "value": "[reference(resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.insights/components', parameters('providerPortalApplicationInsights').InstrumentationKey))]"
+                "value": "[reference(resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.insights/components', parameters('providerPortalApplicationInsights'))).properties.InstrumentationKey]"
               },
               {
                 "name": "FUNCTIONS_EXTENSION_VERSION",
