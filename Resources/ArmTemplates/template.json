@@ -2,6 +2,9 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
   "contentVersion": "1.0.0.0",
   "parameters": {
+    "appInsightsInstrumentationKey":{
+      "type": "string"
+    },
     "functionAppPrefix": {
       "type": "string",
       "metadata": {
@@ -126,36 +129,13 @@
   "variables": {
     "deploymentUrlBase": "https://raw.githubusercontent.com/SkillsFundingAgency/dfc-devops/master/ArmTemplates/",
     "functionAppName": "[concat(parameters('functionAppPrefix'),'-fa')]",
-    "appInsightName": "[concat(parameters('functionAppPrefix'),'-ai')]"
+    "FunctionAppInsightInstrumentationKey":"[parameters('appInsightsInstrumentationKey')]"
   },
   "resources": [
     {
       "apiVersion": "2017-05-10",
-      "name": "ppfpAppInsights",
-      "type": "Microsoft.Resources/deployments",
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[concat(variables('deploymentUrlBase'),'application-insights.json')]",
-          "contentVersion": "1.0.0.0"
-        },
-        "parameters": {
-          "appInsightsName": {
-            "value": "[variables('appInsightName')]"
-          },
-          "attachedService": {
-            "value": "[variables('functionAppName')]"
-          }
-        }
-      }
-    },
-    {
-      "apiVersion": "2017-05-10",
       "name": "ppfpAppService",
-      "type": "Microsoft.Resources/deployments",
-      "dependsOn": [
-        "ppfpAppInsights"
-      ],
+      "type": "Microsoft.Resources/deployments",      
       "properties": {
         "mode": "Incremental",
         "templateLink": {
@@ -179,7 +159,7 @@
             "value": [
               {
                 "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                "value": "[reference(resourceId(parameters('appServicePlanResourceGroup'), 'Microsoft.Insights/components', parameters('providerPortalApplicationInsights')), '2015-05-01', 'Full').properties.InstrumentationKey]"
+                "value": "[variables('FunctionAppInsightInstrumentationKey')]"
               },
               {
                 "name": "FUNCTIONS_EXTENSION_VERSION",
@@ -321,11 +301,11 @@
     },
     "appInsightName": {
       "type": "string",
-      "value": "[variables('appInsightName')]"
+      "value": "[parameters('providerPortalApplicationInsights')]"
     },
     "appInsightInstrumentationKey": {
       "type": "string",
-      "value": "[reference('ppfpAppInsights').outputs.InstrumentationKey.value]"
+      "value": "[variables('FunctionAppInsightInstrumentationKey')]"
     }
   } 
 }
