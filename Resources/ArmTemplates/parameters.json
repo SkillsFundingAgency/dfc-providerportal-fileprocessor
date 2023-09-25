@@ -61,6 +61,9 @@
       },
       "apprenticeshipApiKey": {
         "value": "__ApimPublishCourseDirectoryKey__"
-      }
+      },
+      "appInsightsInstrumentationKey": {
+        "value": "__appInsightsInstrumentationKey__" 
+    }
     }
   }
