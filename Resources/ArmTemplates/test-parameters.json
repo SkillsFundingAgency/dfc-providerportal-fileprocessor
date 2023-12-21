@@ -61,6 +61,12 @@
     },
     "apprenticeshipApiKey": {
       "value": "not-a-real-key"
+    },
+    "workspaceName": {
+      "value": "aTestLogAnalyticsAccount"
+    },
+    "workspaceResourceGroup": {
+      "value": "aResourceGroup"
     }
   }
 }
